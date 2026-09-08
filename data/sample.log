@@ -1,0 +1,6 @@
+2026-09-05 10:00:00 INFO Application started
+2026-09-05 10:01:00 WARN Database response is slow
+2026-09-05 10:02:00 ERROR database connection refused
+2026-09-05 10:03:00 ERROR request timeout after 30 seconds
+2026-09-05 10:04:00 ERROR java.lang.OutOfMemoryError: Java heap space
+2026-09-05 10:05:00 INFO Health check passed

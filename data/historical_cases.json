@@ -1,0 +1,252 @@
+[
+  {
+    "id": "case_001",
+    "title": "数据库连接池耗尽",
+    "description": "应用日志中出现大量 Connection pool exhausted 错误，导致服务无法获取数据库连接",
+    "error_type": "数据库连接失败",
+    "severity": "P1",
+    "root_cause": "数据库连接池最大连接数过小，高并发请求导致连接被耗尽",
+    "solution": "增大数据库连接池最大连接数，并检查连接是否及时释放",
+    "tags": ["数据库", "连接池", "高并发"]
+  },
+  {
+    "id": "case_002",
+    "title": "JVM 堆内存溢出",
+    "description": "日志出现 java.lang.OutOfMemoryError: Java heap space，应用频繁重启",
+    "error_type": "内存溢出",
+    "severity": "P0",
+    "root_cause": "应用长期持有大量对象，导致 JVM 堆内存持续增长并最终耗尽",
+    "solution": "检查内存泄漏，调整 JVM 参数，例如增加 -Xmx，并优化缓存策略",
+    "tags": ["JVM", "OOM", "内存"]
+  },
+  {
+    "id": "case_003",
+    "title": "HTTP 请求超时",
+    "description": "调用下游服务时频繁出现 request timeout after 30 seconds",
+    "error_type": "超时",
+    "severity": "P2",
+    "root_cause": "下游接口响应时间过长，或者网络延迟导致请求超过超时阈值",
+    "solution": "检查下游服务性能，调整超时时间，并增加重试和熔断机制",
+    "tags": ["HTTP", "timeout", "下游服务"]
+  },
+  {
+    "id": "case_004",
+    "title": "Java 空指针异常",
+    "description": "日志中出现 java.lang.NullPointerException，业务请求失败",
+    "error_type": "空指针异常",
+    "severity": "P2",
+    "root_cause": "代码访问了未初始化或为空的对象",
+    "solution": "根据堆栈定位异常代码位置，增加空值校验并修复对象初始化逻辑",
+    "tags": ["Java", "NPE", "空指针"]
+  },
+  {
+    "id": "case_005",
+    "title": "磁盘空间耗尽",
+    "description": "应用日志出现 No space left on device，日志文件无法继续写入",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "服务器磁盘空间被日志文件或临时文件占满",
+    "solution": "使用 df -h 检查磁盘使用率，清理无用日志，并配置日志轮转策略",
+    "tags": ["磁盘", "日志", "Linux"]
+  },
+  {
+    "id": "case_006",
+    "title": "MySQL 服务拒绝连接",
+    "description": "日志中出现 Can't connect to MySQL server 或 Connection refused",
+    "error_type": "数据库连接失败",
+    "severity": "P1",
+    "root_cause": "MySQL 服务未启动、监听端口异常或网络无法访问数据库服务器",
+    "solution": "检查 MySQL 服务状态，使用 netstat 或 ss 检查 3306 端口，并测试网络连通性",
+    "tags": ["MySQL", "Connection refused", "数据库"]
+  },
+  {
+    "id": "case_007",
+    "title": "数据库最大连接数耗尽",
+    "description": "日志出现 Too many connections，新的数据库连接无法建立",
+    "error_type": "数据库连接失败",
+    "severity": "P1",
+    "root_cause": "数据库当前连接数达到 max_connections 上限",
+    "solution": "检查当前连接数，释放异常连接，并根据实际负载调整 max_connections",
+    "tags": ["MySQL", "too many connections", "连接数"]
+  },
+  {
+    "id": "case_008",
+    "title": "数据库认证失败",
+    "description": "日志出现 Access denied for user 或 authentication failed",
+    "error_type": "数据库连接失败",
+    "severity": "P1",
+    "root_cause": "数据库用户名、密码或访问权限配置错误",
+    "solution": "检查数据库连接配置，确认用户名密码正确，并检查用户授权范围",
+    "tags": ["数据库", "认证", "密码"]
+  },
+  {
+    "id": "case_009",
+    "title": "数据库查询超时",
+    "description": "执行 SQL 时出现 query timeout 或 statement timeout",
+    "error_type": "超时",
+    "severity": "P2",
+    "root_cause": "SQL 执行时间过长，可能存在慢查询、索引缺失或锁等待",
+    "solution": "查看慢查询日志，使用 EXPLAIN 分析 SQL，并检查数据库锁等待情况",
+    "tags": ["SQL", "慢查询", "timeout"]
+  },
+  {
+    "id": "case_010",
+    "title": "JVM Metaspace 内存溢出",
+    "description": "日志出现 java.lang.OutOfMemoryError: Metaspace",
+    "error_type": "内存溢出",
+    "severity": "P0",
+    "root_cause": "加载的类数量持续增加，Metaspace 空间不足或存在类加载器泄漏",
+    "solution": "检查类加载情况和热部署机制，并合理调整 -XX:MaxMetaspaceSize",
+    "tags": ["JVM", "Metaspace", "OOM"]
+  },
+  {
+    "id": "case_011",
+    "title": "Python MemoryError",
+    "description": "Python 应用运行过程中抛出 MemoryError，任务无法继续执行",
+    "error_type": "内存溢出",
+    "severity": "P0",
+    "root_cause": "一次性加载的数据量过大，或程序持续持有大量对象导致内存耗尽",
+    "solution": "检查大对象和数据加载逻辑，采用分批处理、生成器或流式读取降低内存占用",
+    "tags": ["Python", "MemoryError", "内存"]
+  },
+  {
+    "id": "case_012",
+    "title": "容器 OOMKilled",
+    "description": "容器突然退出，状态中出现 OOMKilled 或 exit code 137",
+    "error_type": "内存溢出",
+    "severity": "P0",
+    "root_cause": "容器内存使用超过 Docker 或 Kubernetes 配置的内存限制",
+    "solution": "检查容器内存监控，优化应用内存占用，并合理提高 memory limit",
+    "tags": ["Docker", "Kubernetes", "OOMKilled"]
+  },
+  {
+    "id": "case_013",
+    "title": "Redis 请求超时",
+    "description": "日志出现 Redis timeout、Command timed out 或 socket timeout",
+    "error_type": "超时",
+    "severity": "P2",
+    "root_cause": "Redis 负载过高、网络延迟或存在耗时命令",
+    "solution": "检查 Redis slowlog、CPU 和网络情况，避免执行 KEYS 等高耗时命令",
+    "tags": ["Redis", "timeout", "缓存"]
+  },
+  {
+    "id": "case_014",
+    "title": "RPC 调用超时",
+    "description": "微服务之间调用出现 RPC timeout 或 deadline exceeded",
+    "error_type": "超时",
+    "severity": "P2",
+    "root_cause": "下游服务处理过慢、链路网络异常或超时参数设置过短",
+    "solution": "检查调用链路耗时，定位慢服务，并合理设置超时、重试和熔断策略",
+    "tags": ["RPC", "微服务", "timeout"]
+  },
+  {
+    "id": "case_015",
+    "title": "Python NoneType 异常",
+    "description": "日志出现 AttributeError: 'NoneType' object has no attribute",
+    "error_type": "空指针异常",
+    "severity": "P2",
+    "root_cause": "变量实际值为 None，但代码继续访问其属性或方法",
+    "solution": "定位异常堆栈，对变量增加 None 校验，并检查上游函数返回逻辑",
+    "tags": ["Python", "NoneType", "空值"]
+  },
+  {
+    "id": "case_016",
+    "title": "Linux 文件权限不足",
+    "description": "日志出现 Permission denied，应用无法读取或写入目标文件",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "当前进程用户没有目标文件或目录的访问权限",
+    "solution": "使用 ls -l 检查权限和属主，使用 chmod 或 chown 修正权限配置",
+    "tags": ["Linux", "Permission denied", "权限"]
+  },
+  {
+    "id": "case_017",
+    "title": "文件不存在异常",
+    "description": "应用日志出现 FileNotFoundError 或 No such file or directory",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "文件路径配置错误、文件被删除或工作目录与预期不一致",
+    "solution": "检查文件实际路径和程序工作目录，并确认部署环境中目标文件存在",
+    "tags": ["文件", "FileNotFoundError", "路径"]
+  },
+  {
+    "id": "case_018",
+    "title": "文件句柄耗尽",
+    "description": "系统出现 Too many open files，应用无法继续打开文件或网络连接",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "文件或 socket 未正确关闭，或系统文件描述符限制过低",
+    "solution": "使用 ulimit -n 查看限制，检查资源泄漏，并确保文件和连接及时关闭",
+    "tags": ["Linux", "文件句柄", "Too many open files"]
+  },
+  {
+    "id": "case_019",
+    "title": "线程池耗尽",
+    "description": "日志出现 thread pool exhausted、task rejected 或 RejectedExecutionException",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "线程池容量不足或任务执行过慢，导致新任务无法被接收",
+    "solution": "检查线程池活跃线程和队列长度，优化慢任务并合理调整线程池参数",
+    "tags": ["线程池", "并发", "RejectedExecutionException"]
+  },
+  {
+    "id": "case_020",
+    "title": "CPU 使用率过高",
+    "description": "应用响应明显变慢，监控显示 CPU 长时间接近 100%",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "可能存在死循环、频繁 GC、计算密集任务或异常高并发",
+    "solution": "使用 top、htop 或性能分析工具定位高 CPU 线程和热点代码",
+    "tags": ["CPU", "性能", "高负载"]
+  },
+  {
+    "id": "case_021",
+    "title": "Redis 服务拒绝连接",
+    "description": "日志出现 Error connecting to Redis 或 Connection refused",
+    "error_type": "数据库连接失败",
+    "severity": "P1",
+    "root_cause": "Redis 服务未启动、端口不可达或连接地址配置错误",
+    "solution": "检查 Redis 服务状态、6379 端口监听情况，并确认网络和连接配置",
+    "tags": ["Redis", "Connection refused", "缓存"]
+  },
+  {
+    "id": "case_022",
+    "title": "Kafka Broker 不可用",
+    "description": "日志出现 Broker may not be available 或 Failed to connect to broker",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "Kafka Broker 宕机、网络异常或 advertised.listeners 配置错误",
+    "solution": "检查 Broker 运行状态和网络连通性，并核对 listeners 配置",
+    "tags": ["Kafka", "Broker", "消息队列"]
+  },
+  {
+    "id": "case_023",
+    "title": "Kafka 消费者积压",
+    "description": "消费者处理速度低于消息生产速度，consumer lag 持续增长",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "消费者处理逻辑过慢、消费者实例不足或分区分配不合理",
+    "solution": "监控 consumer lag，优化消息处理逻辑，并增加消费者实例或分区数量",
+    "tags": ["Kafka", "consumer lag", "消息积压"]
+  },
+  {
+    "id": "case_024",
+    "title": "只读文件系统异常",
+    "description": "应用写文件时出现 Read-only file system",
+    "error_type": "其他",
+    "severity": "P3",
+    "root_cause": "文件系统被以只读方式挂载，或磁盘异常后系统自动切换为只读模式",
+    "solution": "使用 mount 检查挂载状态，检查磁盘错误并根据实际情况重新挂载文件系统",
+    "tags": ["Linux", "文件系统", "Read-only"]
+  },
+  {
+    "id": "case_025",
+    "title": "上游网关超时",
+    "description": "Nginx 或网关日志出现 upstream timed out 或 504 Gateway Timeout",
+    "error_type": "超时",
+    "severity": "P2",
+    "root_cause": "后端应用处理请求时间过长，超过网关等待时间",
+    "solution": "检查后端接口耗时，优化慢请求，并合理调整 proxy_read_timeout 等参数",
+    "tags": ["Nginx", "504", "upstream timeout"]
+  }
+]
