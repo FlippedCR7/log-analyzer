@@ -17,3 +17,5 @@ modelscope
 gradio
 
 pytest
+
+requests

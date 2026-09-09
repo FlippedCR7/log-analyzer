@@ -2,8 +2,10 @@ import html
 from pathlib import Path
 
 import gradio as gr
+import requests
 
-from app.analyzer import analyze_log
+
+BACKEND_URL = "http://127.0.0.1:8000/upload"
 
 
 def severity_badge(severity: str) -> str:
@@ -42,6 +44,7 @@ def build_error_html(
                 <div style="font-size: 18px; font-weight: bold;">
                     {severity_badge(severity)} · {error_type}
                 </div>
+
                 <div style="
                     margin-top: 8px;
                     font-family: monospace;
@@ -138,7 +141,6 @@ def build_llm_html(
     root_cause = html.escape(
         str(llm_analysis.get("possible_root_cause", ""))
     )
-
     confidence = html.escape(
         str(llm_analysis.get("confidence", ""))
     )
@@ -187,10 +189,26 @@ def build_llm_html(
     """
 
 
+def build_error_response(
+    message: str,
+) -> tuple[str, str, str, str, str, str]:
+    """生成统一的前端错误展示。"""
+    safe_message = html.escape(message)
+
+    return (
+        "0",
+        "0",
+        "0",
+        "0",
+        "分析失败",
+        f"<p>{safe_message}</p>",
+    )
+
+
 def analyze_file(
     file_path: str | None,
 ) -> tuple[str, str, str, str, str, str]:
-    """读取日志并返回适合前端展示的诊断结果。"""
+    """通过 FastAPI 上传日志，并展示诊断结果。"""
     if not file_path:
         return (
             "0",
@@ -204,59 +222,109 @@ def analyze_file(
     path = Path(file_path)
 
     if path.suffix.lower() not in {".log", ".txt"}:
-        return (
-            "0",
-            "0",
-            "0",
-            "0",
-            "文件错误",
-            "<p>仅支持 .log 或 .txt 文件。</p>",
+        return build_error_response(
+            "仅支持 .log 或 .txt 文件。"
         )
 
     try:
-        content = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return (
-            "0",
-            "0",
-            "0",
-            "0",
-            "编码错误",
-            "<p>文件不是 UTF-8 编码，暂时无法读取。</p>",
+        with path.open("rb") as file:
+            response = requests.post(
+                BACKEND_URL,
+                files={
+                    "file": (
+                        path.name,
+                        file,
+                        "text/plain",
+                    )
+                },
+                timeout=120,
+            )
+    except requests.ConnectionError:
+        return build_error_response(
+            "无法连接 FastAPI 后端，请确认后端已启动。"
+        )
+    except requests.Timeout:
+        return build_error_response(
+            "后端分析超时，请稍后重试。"
+        )
+    except requests.RequestException as exc:
+        return build_error_response(
+            f"请求后端失败：{type(exc).__name__}"
         )
 
-    lines = content.splitlines()
+    try:
+        payload = response.json()
+    except ValueError:
+        return build_error_response(
+            "后端返回了无法解析的响应。"
+        )
 
-    result = analyze_log(
-        lines=lines,
-        trace_id="gradio-local",
+    if response.status_code != 200:
+        message = str(
+            payload.get(
+                "message",
+                f"后端请求失败，HTTP {response.status_code}",
+            )
+        )
+        return build_error_response(message)
+
+    if payload.get("code") != 0:
+        return build_error_response(
+            str(payload.get("message", "分析失败"))
+        )
+
+    result = payload.get("data")
+
+    if not isinstance(result, dict):
+        return build_error_response(
+            "后端返回的数据格式不正确。"
+        )
+
+    parse_result = result.get("parse_result", {})
+    error_summary = result.get("error_summary", {})
+    representative_errors = result.get(
+        "representative_errors",
+        [],
+    )
+    historical_cases = result.get(
+        "historical_cases",
+        [],
+    )
+    llm_analysis = result.get(
+        "llm_analysis",
+        {},
     )
 
-    parse_result = result["parse_result"]
-    error_summary = result["error_summary"]
-    representative_errors = result["representative_errors"]
-    historical_cases = result["historical_cases"]
-    llm_analysis = result["llm_analysis"]
+    level_counts = parse_result.get("level_counts", {})
 
-    total = str(parse_result["total"])
-    info_count = str(parse_result["level_counts"]["INFO"])
-    warn_count = str(parse_result["level_counts"]["WARN"])
-    error_count = str(parse_result["level_counts"]["ERROR"])
+    total = str(parse_result.get("total", 0))
+    info_count = str(level_counts.get("INFO", 0))
+    warn_count = str(level_counts.get("WARN", 0))
+    error_count = str(level_counts.get("ERROR", 0))
 
     highest_severity = str(
-        error_summary["highest_severity"]
+        error_summary.get(
+            "highest_severity",
+            "P3",
+        )
     )
 
     errors_html = build_error_html(
         representative_errors
+        if isinstance(representative_errors, list)
+        else []
     )
 
     cases_html = build_cases_html(
         historical_cases
+        if isinstance(historical_cases, list)
+        else []
     )
 
     llm_html = build_llm_html(
         llm_analysis
+        if isinstance(llm_analysis, dict)
+        else {}
     )
 
     full_report = f"""
