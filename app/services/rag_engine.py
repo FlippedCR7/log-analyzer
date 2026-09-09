@@ -5,7 +5,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from app.utils.config import DB_PATH
+from app.utils.config import DB_PATH, EMBEDDING_MODEL_PATH
 
 
 def load_historical_cases() -> list[dict[str, object]]:
@@ -35,9 +35,14 @@ def build_case_text(case: dict[str, object]) -> str:
 
 
 def get_embedding_model() -> HuggingFaceEmbeddings:
-    """创建本地文本向量模型。"""
+    """加载本地 Embedding 模型。"""
+    if not EMBEDDING_MODEL_PATH:
+        raise ValueError(
+            "EMBEDDING_MODEL_PATH is not configured"
+        )
+
     return HuggingFaceEmbeddings(
-        model_name=r"D:\models\models\BAAI--bge-base-zh-v1.5\snapshots\master"
+        model_name=EMBEDDING_MODEL_PATH,
     )
 
 
