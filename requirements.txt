@@ -19,3 +19,5 @@ gradio
 pytest
 
 requests
+
+pytest-cov
