@@ -1,11 +1,16 @@
+from functools import lru_cache
 import json
 from pathlib import Path
 
+import chromadb
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from app.utils.config import DB_PATH, EMBEDDING_MODEL_PATH
+
+
+COLLECTION_NAME = "historical_cases"
 
 
 def load_historical_cases() -> list[dict[str, object]]:
@@ -34,8 +39,9 @@ def build_case_text(case: dict[str, object]) -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def get_embedding_model() -> HuggingFaceEmbeddings:
-    """加载本地 Embedding 模型。"""
+    """加载并缓存本地 Embedding 模型。"""
     if not EMBEDDING_MODEL_PATH:
         raise ValueError(
             "EMBEDDING_MODEL_PATH is not configured"
@@ -50,7 +56,7 @@ def build_documents(
     cases: list[dict[str, object]],
 ) -> list[Document]:
     """将历史案例转换为 LangChain Document。"""
-    documents = []
+    documents: list[Document] = []
 
     for case in cases:
         document = Document(
@@ -68,21 +74,46 @@ def build_documents(
     return documents
 
 
-def create_vector_store() -> Chroma:
-    """创建并持久化历史案例 Chroma 向量数据库。"""
+def rebuild_vector_store() -> Chroma:
+    """删除旧集合并根据历史案例重新构建 Chroma 向量库。"""
     cases = load_historical_cases()
     documents = build_documents(cases)
 
+    document_ids = [
+        str(case.get("id", ""))
+        for case in cases
+    ]
+
     embedding_model = get_embedding_model()
 
-    vector_store = Chroma.from_documents(
+    client = chromadb.PersistentClient(
+        path=DB_PATH,
+    )
+
+    try:
+        client.delete_collection(
+            name=COLLECTION_NAME,
+        )
+    except Exception:
+        pass
+
+    vector_store = Chroma(
+        client=client,
+        collection_name=COLLECTION_NAME,
+        embedding_function=embedding_model,
+    )
+
+    vector_store.add_documents(
         documents=documents,
-        embedding=embedding_model,
-        persist_directory=DB_PATH,
-        collection_name="historical_cases",
+        ids=document_ids,
     )
 
     return vector_store
+
+
+def create_vector_store() -> Chroma:
+    """兼容旧调用方式，内部使用安全重建逻辑。"""
+    return rebuild_vector_store()
 
 
 def search_similar_cases(
@@ -93,7 +124,7 @@ def search_similar_cases(
     embedding_model = get_embedding_model()
 
     vector_store = Chroma(
-        collection_name="historical_cases",
+        collection_name=COLLECTION_NAME,
         embedding_function=embedding_model,
         persist_directory=DB_PATH,
     )
@@ -110,15 +141,21 @@ def format_search_results(
     documents: list[Document],
 ) -> list[dict[str, object]]:
     """将检索结果整理为可返回给 API 的结构化数据。"""
-    results = []
+    results: list[dict[str, object]] = []
 
     for document in documents:
         results.append(
             {
                 "id": document.metadata.get("id", ""),
                 "title": document.metadata.get("title", ""),
-                "error_type": document.metadata.get("error_type", ""),
-                "severity": document.metadata.get("severity", ""),
+                "error_type": document.metadata.get(
+                    "error_type",
+                    "",
+                ),
+                "severity": document.metadata.get(
+                    "severity",
+                    "",
+                ),
                 "content": document.page_content,
             }
         )
@@ -131,6 +168,9 @@ def retrieve_similar_cases(
     k: int = 3,
 ) -> list[dict[str, object]]:
     """检索并返回结构化历史案例结果。"""
-    documents = search_similar_cases(query=query, k=k)
+    documents = search_similar_cases(
+        query=query,
+        k=k,
+    )
 
     return format_search_results(documents)
